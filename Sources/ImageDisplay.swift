@@ -56,7 +56,7 @@ public struct ImageDisplay: View {
         self.changePhotoButtonLabel = changePhotoText
     }
     
-    var body: some View {
+    public var body: some View {
 
         VStack {
             if displayedImage != nil {
