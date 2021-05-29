@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-extension Color {
+public extension Color {
 
     static var label: Color {
         return Color(UIColor.label)
