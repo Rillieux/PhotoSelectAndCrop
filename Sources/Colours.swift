@@ -7,41 +7,41 @@
 
 import SwiftUI
 
-public extension Color {
+extension Color {
 
-    static var label: Color {
+    public static var label: Color {
         return Color(UIColor.label)
     }
 
-    static var secondaryLabel: Color {
+    public static var secondaryLabel: Color {
         return Color(UIColor.secondaryLabel)
     }
 
-    static var tertiaryLabel: Color {
+    public static var tertiaryLabel: Color {
         return Color(UIColor.tertiaryLabel)
     }
 
-    static var quaternaryLabel: Color {
+    public static var quaternaryLabel: Color {
         return Color(UIColor.quaternaryLabel)
     }
 
-    static var systemFill: Color {
+    public static var systemFill: Color {
         return Color(UIColor.systemFill)
     }
 
-    static var secondarySystemFill: Color {
+    public static var secondarySystemFill: Color {
         return Color(UIColor.secondarySystemFill)
     }
 
-    static var tertiarySystemFill: Color {
+    public static var tertiarySystemFill: Color {
         return Color(UIColor.tertiarySystemFill)
     }
 
-    static var quaternarySystemFill: Color {
+    public static var quaternarySystemFill: Color {
         return Color(UIColor.quaternarySystemFill)
     }
 
-    static var systemBackground: Color {
+    public static var systemBackground: Color {
            return Color(UIColor.systemBackground)
     }
 
