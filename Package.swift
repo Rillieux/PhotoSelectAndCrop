@@ -25,8 +25,7 @@ let package = Package(
         .target(
             name: "PhotoSelectAndCrop",
             dependencies: [],
-            resources: [.process("Resources")]
-        ),
+            resources: [.process("Resources")]),
         .testTarget(
             name: "PhotoSelectAndCropTests",
             dependencies: ["PhotoSelectAndCrop"]),
