@@ -19,7 +19,6 @@ public struct ImageDisplay: View {
     @State private var changePhotoButtonLabel = NSLocalizedString("Change photo", comment: "indicate that a photo is available and may be changed to another")
     
     @State private var defaultImage: Image?
-    
     @State private var originalImage: UIImage?
     @State private var zoom: CGFloat?
     @State private var position: CGSize?
