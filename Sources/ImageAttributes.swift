@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-class ImageAttributes: ObservableObject {
+public class ImageAttributes: ObservableObject {
     
     @Published var image: UIImage? // cropped and / or scaled image take from originalImage
     @Published var originalImage: UIImage? // the original image selected before cropping or scaling

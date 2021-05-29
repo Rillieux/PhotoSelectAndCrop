@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ImageDisplay: View {
+public struct ImageDisplay: View {
 
     @State private var isShowingPhotoSelectionSheet = false
     
