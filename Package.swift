@@ -25,6 +25,7 @@ let package = Package(
         .target(
             name: "PhotoSelectAndCrop",
             dependencies: [],
+            path: "Sources",
             resources: [.process("Resources")]),
     ]
 )
