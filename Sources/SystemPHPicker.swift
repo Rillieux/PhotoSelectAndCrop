@@ -19,13 +19,13 @@ import SwiftUI
 ///2. It seems that the "cancel" button on this picker from Apple
 ///does not work. The user *must* select an image.
 
-struct SystemPHPicker: UIViewControllerRepresentable {
+public struct SystemPHPicker: UIViewControllerRepresentable {
     
     @Environment(\.presentationMode) private var presentationMode
     
     @Binding var image: UIImage?
     
-    func makeUIViewController(context: Context) -> PHPickerViewController {
+    public func makeUIViewController(context: Context) -> PHPickerViewController {
         var configuration = PHPickerConfiguration()
         configuration.selectionLimit = 1
         configuration.filter = .images
@@ -35,22 +35,22 @@ struct SystemPHPicker: UIViewControllerRepresentable {
         return picker
     }
     
-    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {
+    public func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {
         
     }
     
-    func makeCoordinator() -> Coordinator {
+    public func makeCoordinator() -> Coordinator {
         return Coordinator(parent: self)
     }
     
-    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+    public class Coordinator: NSObject, PHPickerViewControllerDelegate {
         let parent: SystemPHPicker
         
         init(parent: SystemPHPicker) {
             self.parent = parent
         }
         
-        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+        public func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
             for img in results {
                 guard img.itemProvider.canLoadObject(ofClass: UIImage.self) else { return }
                 img.itemProvider.loadObject(ofClass: UIImage.self) { image, error in

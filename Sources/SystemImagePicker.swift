@@ -12,12 +12,12 @@ import SwiftUI
 ///Code from [Hacking With Swift]( https://www.hackingwithswift.com/books/ios-swiftui/importing-an-image-into-swiftui-using-uiimagepickercontroller)
 /// - Note: This picker also seems to results in memory leaks when it appears or disappears.
 
-struct SystemUIImagePicker: UIViewControllerRepresentable {
+public struct SystemUIImagePicker: UIViewControllerRepresentable {
     
     @Environment(\.presentationMode) var presentationMode
     @Binding var image: UIImage?
     
-    class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
+    public class Coordinator: NSObject, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
         let parent: SystemUIImagePicker
         
         init(_ parent: SystemUIImagePicker) {
@@ -32,17 +32,17 @@ struct SystemUIImagePicker: UIViewControllerRepresentable {
         }
     }
 
-    func makeCoordinator() -> Coordinator {
+    public func makeCoordinator() -> Coordinator {
         Coordinator(self)
     }
     
-    func makeUIViewController(context: UIViewControllerRepresentableContext<SystemUIImagePicker>) -> UIImagePickerController {
+    public func makeUIViewController(context: UIViewControllerRepresentableContext<SystemUIImagePicker>) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.delegate = context.coordinator
         return picker
     }
 
-    func updateUIViewController(_ uiViewController: UIImagePickerController, context: UIViewControllerRepresentableContext<SystemUIImagePicker>) {
+    public func updateUIViewController(_ uiViewController: UIImagePickerController, context: UIViewControllerRepresentableContext<SystemUIImagePicker>) {
 
     }
 }
