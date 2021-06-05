@@ -22,7 +22,7 @@ public class ImageAttributes: ObservableObject {
     
     var swiftUIImage: Image?
     
-    init(image: UIImage?, originalImage: UIImage?, scale: CGFloat, xWidth: CGFloat, yHeight: CGFloat) {
+    public init(image: UIImage?, originalImage: UIImage?, scale: CGFloat, xWidth: CGFloat, yHeight: CGFloat) {
         self.image = image
         self.originalImage = originalImage
         self.scale = scale
@@ -30,14 +30,14 @@ public class ImageAttributes: ObservableObject {
         self.yHeight = yHeight
     }
     
-    init(withSFSymbol name: String) {
+    public init(withSFSymbol name: String) {
         self.swiftUIImage = Image(systemName: name)
         self.scale = 1.0
         self.xWidth = 1.0
         self.yHeight = 1.0
     }
     
-    init(withImage name: String) {
+    public init(withImage name: String) {
         self.swiftUIImage = Image(name)
         /// Setting self.scale to 15 will keep an image from the Asset catalog from being too small. See line 159 in ImageMoveAndScaleSheet.swift.
         self.scale = 15.0
