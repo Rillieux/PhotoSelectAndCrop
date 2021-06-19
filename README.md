@@ -21,7 +21,7 @@ Add an image display view to your parent view like this:
 
 The above line of code looks to see if a contact already has an image saved. If true, then an `ImageAttributes` struct is created from the saved data and if false, then an `ImageAttributes` placeholder is used. `$isEditMode` is a `@State` variable passed as a binding to `ImageDisplay` which toggles showing a button to present the picker.   
 
-<img align="right" src="https://github.com/gymsymbol/PhotoSelectAndCrop/blob/main/Screenshots/coreDataEntity.png" width="60%">
+<img align="right" src="https://github.com/Rillieux/PhotoSelectAndCrop/blob/main/Sources/Screenshots/coreDataEntity.png" width="60%">
 
 Using CoreData, one might do the following. Define two entities: `Contact` and `ProfileImage`, where `Contact` has a `To One` relationship to `ProfileImage`. The `ProfileImage` entity should have properties that can be mapped to the variables provided to the `ImageDisplay` struct after the user has selected an image from their library.
 
