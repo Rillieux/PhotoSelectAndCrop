@@ -9,11 +9,11 @@ import SwiftUI
 
 public class ImageAttributes: ObservableObject {
     
-    @Published public var image: UIImage? // cropped and / or scaled image take from originalImage
-    @Published public var originalImage: UIImage? // the original image selected before cropping or scaling
-    @Published public var scale: CGFloat // the magnificaiton of the cropped image
-    @Published public var xWidth: CGFloat // used to detrermine the position of the original image in the "viewfinder"
-    @Published public var yHeight: CGFloat // same as above
+    @Published var image: UIImage? // cropped and / or scaled image take from originalImage
+    @Published var originalImage: UIImage? // the original image selected before cropping or scaling
+    @Published var scale: CGFloat // the magnificaiton of the cropped image
+    @Published var xWidth: CGFloat // used to detrermine the position of the original image in the "viewfinder"
+    @Published var yHeight: CGFloat // same as above
     public var position: CGSize { // computed from the previous two variables.
         get {
             return CGSize(width: xWidth, height: yHeight)
@@ -21,7 +21,7 @@ public class ImageAttributes: ObservableObject {
     }
     
     //
-    public var swiftUIImage: Image?
+    var swiftUIImage: Image?
     
     public init(image: UIImage?, originalImage: UIImage?, scale: CGFloat, xWidth: CGFloat, yHeight: CGFloat) {
         self.image = image
