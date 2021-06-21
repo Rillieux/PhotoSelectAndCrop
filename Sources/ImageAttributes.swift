@@ -20,6 +20,7 @@ public class ImageAttributes: ObservableObject {
         }
     }
     
+    //
     public var swiftUIImage: Image?
     
     public init(image: UIImage?, originalImage: UIImage?, scale: CGFloat, xWidth: CGFloat, yHeight: CGFloat) {
