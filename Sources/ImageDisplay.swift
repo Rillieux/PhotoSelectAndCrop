@@ -113,5 +113,10 @@ public struct ImageDisplay: View {
     func loadImage() {
         guard let inputImage = inputImage else { return }
         displayedImage = inputImage
+        image.originalImage = originalImage
+        image.image = displayedImage
+        image.scale = zoom ?? 1.0
+        image.xWidth = position?.width ?? 0.0
+        image.yHeight = position?.height ?? 0.0
     }
 }
