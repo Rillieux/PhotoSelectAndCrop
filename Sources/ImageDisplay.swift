@@ -11,7 +11,7 @@ public struct ImageDisplay: View {
 
     @State private var isShowingPhotoSelectionSheet = false
     
-    @ObservedObject public var image: ImageAttributes
+    @ObservedObject var image: ImageAttributes
     
     @Binding var isEditMode: Bool
     
