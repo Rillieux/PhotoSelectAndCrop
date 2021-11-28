@@ -22,7 +22,7 @@ struct RenderingForegroundStyle: ViewModifier {
             } else if colors.count == 3 {
                 content.foregroundStyle(colors[0], colors[1], colors[2])
             } else {
-                content.foregroundColor(Color.accentColor)
+                content
             }
         }
     }

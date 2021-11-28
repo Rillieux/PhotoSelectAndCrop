@@ -74,11 +74,12 @@ public struct ImagePane: View {
                 if imageAttributes.originalImage != nil {
                     Text(changePhotoButtonLabel)
                         .font(.footnote)
+                        .foregroundColor(Color.accentColor)
                 } else {
                     Text(addPhotoButtonLabel)
                         .font(.footnote)
+                        .foregroundColor(Color.accentColor)
                 }
-                
             })
                 .opacity(isEditMode ? 1.0 : 0.0)
         }
