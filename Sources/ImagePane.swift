@@ -11,7 +11,7 @@ public struct ImagePane: View {
     
     @State private var isShowingPhotoSelectionSheet = false
     
-    @ObservedObject private var imageAttributes: ImageAttributes
+    @ObservedObject public var imageAttributes: ImageAttributes
     
     @Binding var isEditMode: Bool
     
@@ -64,7 +64,7 @@ public struct ImagePane: View {
         self.changePhotoButtonLabel = changePhotoText
     }
     
-    var body: some View {
+    public var body: some View {
         
         VStack {
             displayImage
