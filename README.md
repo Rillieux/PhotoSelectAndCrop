@@ -17,7 +17,7 @@ The `CGFloat` and `CGPoint` represent the scale and position of the original ima
 
 ## Implementation
 
-Add an image display view to your parent view like this:
+Add an ImagePane view to your parent view like this:
 
 `ImagePane(ImagePane(image: image, isEditMode: $isEditMode, renderingMode: renderingMode, colors: colors)
 
@@ -25,9 +25,9 @@ Add an image display view to your parent view like this:
 
 Using CoreData, one might do the following. Define two entities: `Contact` and `ProfileImage`, where `Contact` has a `To One` relationship to `ProfileImage`. The `ProfileImage` entity should have properties that can be mapped to the variables provided to the `ImageDisplay` struct after the user has selected an image from their library.
 
-Then, an `ImageAttributes` struct must be made, initialized with the properties from the Core Data entity. This `ImageAttributes` struct is then passed to the `ImageDisplay` as in the above code. For the nil case, a second `ImageAttributes` struct is initialzed, this time with a default image named `avatar` which was saved to the project's Image Assets folder. 
+Then, an `ImageAttributes` class should be initialized with the properties from the Core Data entity. This `ImageAttributes` class is then passed to the `ImagePane` as in the above code. For the nil case, a second `ImageAttributes` struct is initialzed, this time with a default image named `avatar` which was saved to the project's Image Assets folder. 
 
-An `ImageAttributes` struct can easily be defined as a placeholder.  
+An `ImageAttributes` object can easily be defined as a placeholder.  
 
 With an SF Symbol: `let placeholderAperture = ImageAttributes(withSFSymbol: "camera.aperture")`
 
