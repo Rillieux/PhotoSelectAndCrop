@@ -2,7 +2,7 @@
 //  ImageMoveAndScaleSheet+Extensions.swift
 //  PhotoSelectAndCrop
 //
-//  Created by Dave Kondris on 03/01/21.
+//  Created by Dave Kondris on 18/11/21.
 //
 
 import SwiftUI
@@ -20,7 +20,7 @@ extension ImageMoveAndScaleSheet {
         guard let inputImage = inputImage else { return }
         let w = inputImage.size.width
         let h = inputImage.size.height
-        displayedImage = inputImage
+        viewModel.originalImage = inputImage
         inputImageAspectRatio = w / h
         resetImageOriginAndScale()
     }
@@ -28,15 +28,15 @@ extension ImageMoveAndScaleSheet {
     
     ///Loads the current image when the view appears.
     func setCurrentImage() {
-        guard let currentImage = originalImage else { return }
+        guard let currentImage = viewModel.originalImage else { return }
         let w = currentImage.size.width
         let h = currentImage.size.height
         inputImage = currentImage
         inputImageAspectRatio = w / h
-        currentPosition = originalPosition!
-        newPosition = originalPosition!
-        zoomAmount = originalZoom!
-        displayedImage = currentImage
+        currentPosition = imageAttributes.position
+        newPosition = imageAttributes.position
+        zoomAmount = imageAttributes.scale
+        viewModel.originalImage = currentImage
         repositionImage()
     }
         
@@ -173,7 +173,7 @@ extension ImageMoveAndScaleSheet {
     /// - Note: But if the user saves the image in one mode and them opens it in another, the
     ///scale and size will be slightly off.
     ///
-    func processImage() {
+    func composeImageAttributes() {
         
         let scale = (inputImage?.size.width)! / displayW
         let originAdjustment = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
@@ -182,9 +182,12 @@ extension ImageMoveAndScaleSheet {
         let xPos = ( ( ( displayW - originAdjustment ) / 2 ) + inset + ( currentPosition.width * -1 ) ) * scale
         let yPos = ( ( ( displayH - originAdjustment ) / 2 ) + inset + ( currentPosition.height * -1 ) ) * scale
         
-        processedImage = croppedImage(from: inputImage!, croppedTo: CGRect(x: xPos, y: yPos, width: diameter, height: diameter))
-        originalImage = inputImage
-        originalZoom = zoomAmount
-        originalPosition = currentPosition
+        let tempUIImage: UIImage = croppedImage(from: inputImage!, croppedTo: CGRect(x: xPos, y: yPos, width: diameter, height: diameter))
+        
+        imageAttributes.image = Image(uiImage: tempUIImage)
+        imageAttributes.originalImage = inputImage
+        imageAttributes.scale = zoomAmount
+        imageAttributes.xWidth = currentPosition.width
+        imageAttributes.yHeight = currentPosition.height
     }
 }

@@ -5,7 +5,6 @@
 //  Created by Dave Kondris on 03/01/21.
 //
 
-import Combine
 import UIKit
 
 ///A class that enables determining if the user's device is in landscape or portrait position.

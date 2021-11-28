@@ -7,7 +7,7 @@ let package = Package(
     name: "PhotoSelectAndCrop",
     defaultLocalization: "en",
     platforms: [
-        .iOS(.v14)
+        .iOS("15.0")
     ],
     products: [
         .library(

@@ -7,68 +7,6 @@
 
 import SwiftUI
 
-/**
-A View that allows a selected image to be moved and scaled by the user.
-
-# Bindings
- This View has four Bindings:
-1. originalImage
-2. originalPosition
-3. originalZoom
-4. processedImage
-
-# ORIGINAL IMAGE
-is the original image `UIImage` used to created the cropped UIImage.
- 
-# ORIGINAL POSITION
-is the position `CGSize` the originalImage should be displayed. If the image is received from a previous "save", for example from CoreData, this will help position the image as it was when the cropped image was made.
- 
-# ORIGINAL ZOOM
-is the scale `CGFloat` at which the cropped image was made. It is also used to position the image as the user would expect after loading it from a persistent state.
- 
-# PROCESSED IMAGE
- is the image `UIImage` after it has been cropped according to the position and scale determined by the user.
- 
- It is common to save all of these properties in a persistent state. For example
- ```
- private func saveContactImage() {
-     
-     guard let inputImage = inputImage else { return }
-     
-     if contact.picture != nil {
-         contact.picture!.image = inputImage
-         contact.picture!.originalImage = originalImage!
-         contact.picture!.scale = zoom!
-         contact.picture!.xWidth = Double(position!.width)
-         contact.picture!.yHeight = Double(position!.height)
-         
-     } else {
-         
-         let newContactImage = ContactImage(context: contact.managedObjectContext!)
-         
-         if originalImage != nil && zoom != nil && position != nil {
-             newContactImage.image = inputImage
-             newContactImage.originalImage = originalImage!
-             newContactImage.scale = zoom!
-             newContactImage.xWidth = Double(position!.width)
-             newContactImage.yHeight = Double(position!.height)
-             newContactImage.contact = contact
-         }
-     }
-     
-     do {
-         try viewContext.save()
-         viewContext.refresh(contact, mergeChanges: true)
-     } catch {
-         errorAlertTitle = (error as? LocalizedError)?.errorDescription ?? "An error occurred"
-         errorAlertIsPresented = true
-     }
- }
- ```
- 
- 
- 
-*/
 struct ImageMoveAndScaleSheet: View {
     
     @Environment(\.presentationMode) var presentationMode
@@ -76,25 +14,17 @@ struct ImageMoveAndScaleSheet: View {
     
     @StateObject var orientation = DeviceOrientation()
     
+    @StateObject var viewModel: ImageMoveAndScaleSheet.ViewModel
+    
+    var imageAttributes: ImageAttributes
+    
+    init(viewModel: ViewModel = .init(), imageAttributes: ImageAttributes) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+        self.imageAttributes = imageAttributes
+    }
     @State private var isShowingImagePicker = false
     
-    ///The cropped image is what will be sent back to the parent view.
-    ///It should be the part of the image in the square defined by the
-    ///cutout circle's diamter. See below, the cutout circle has an "inset" value
-    ///which can be changed.
-    
-    @Binding var originalImage: UIImage?
-
-    @Binding var originalPosition: CGSize?
-    
-    @Binding var originalZoom: CGFloat?
-    
-    ///Default Image (SF Symbols string or Image Asset name)
-    let defaultImage: Image
-    
-    ///The optional UIImage that is created when cropping and or scaling the original image when
-    ///[processImage](x-source-tag://processImage) is run.
-    @Binding var processedImage: UIImage?
+    @State var originalZoom: CGFloat?
     
     ///The input image is received from the ImagePicker.
     ///We will need to calculate and refer to its aspectr ratio
@@ -136,7 +66,7 @@ struct ImageMoveAndScaleSheet: View {
     let defaultImageSide = (UIScreen.main.bounds.width - (30)) * CGFloat(2).squareRoot() / 2
     
     
-    //Localized stirngs
+    //Localized strings
     let moveAndScale = NSLocalizedString("Move and Scale", comment: "indicate that the user may use gestures to move and or scale the image")
     let selectPhoto = NSLocalizedString("Select a photo by tapping the icon below", comment: "indicate that the user may select a photo by tapping on the green icon")
     let cancelSheet = NSLocalizedString("Cancel", comment: "indicate that the user cancel the action, closing the sheet")
@@ -147,8 +77,8 @@ struct ImageMoveAndScaleSheet: View {
         ZStack {
             ZStack {
                 Color.black.opacity(0.8)
-                if displayedImage != nil {
-                    Image(uiImage: displayedImage!)
+                if viewModel.originalImage != nil {
+                    Image(uiImage: viewModel.originalImage!)
                         .resizable()
                         .scaleEffect(zoomAmount + currentAmount)
                         .scaledToFill()
@@ -157,16 +87,15 @@ struct ImageMoveAndScaleSheet: View {
                         .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
                         .clipped()
                 } else {
-                    defaultImage
+                    viewModel.image
                         .resizable()
                         .scaledToFill()
                         .aspectRatio(contentMode: .fit)
-                        .foregroundColor(.systemGray2)
-                        .clipShape(Circle())
+                        .foregroundColor(Color(.systemGray2))
                         ///Padding is added if the default image is from the asset catalogue.
                         ///See line 45 in ImageAttributes.swift.
-                        .padding((originalZoom == 15) ? inset - (originalZoom ?? 0.0) : 0)
-                } 
+                        .padding(inset * 2)
+                }
             }
             
             Rectangle()
@@ -174,7 +103,7 @@ struct ImageMoveAndScaleSheet: View {
                 .mask(HoleShapeMask().fill(style: FillStyle(eoFill: true)))
 
             VStack {
-                Text((displayedImage != nil) ? moveAndScale : selectPhoto )
+                Text((viewModel.originalImage != nil) ? viewModel.moveAndScale : viewModel.selectPhoto )
                     .foregroundColor(.white)
                     .padding(.top, 50)
                     .frame(maxWidth: .infinity, alignment: .center)
@@ -203,6 +132,9 @@ struct ImageMoveAndScaleSheet: View {
             .padding(.bottom, (orientation.orientation == .portrait) ? 20 : 4)
         }
         .edgesIgnoringSafeArea(.all)
+        .onAppear(perform: {
+            viewModel.loadImageAttributes(imageAttributes)
+        })
         
         //MARK: - Gestures
         
@@ -299,12 +231,19 @@ struct ImageMoveAndScaleSheet: View {
     private var saveButton: some View {
         Button(
             action: {
-                self.processImage()
+                self.composeImageAttributes()
                 presentationMode.wrappedValue.dismiss()
             })
-            { Text( usePhoto) }
-            .opacity((displayedImage != nil) ? 1.0 : 0.2)
-            .disabled((displayedImage != nil) ? false: true)
+        { Text( viewModel.usePhoto) }
+            .opacity((viewModel.originalImage != nil) ? 1.0 : 0.2)
+            .disabled((viewModel.originalImage != nil) ? false: true)
     }
 }
 
+struct ImageMoveAndScaleSheet_Previews: PreviewProvider {
+    static var previews: some View {
+        ImageMoveAndScaleSheet(viewModel: ImageMoveAndScaleSheet.ViewModel(),
+                               imageAttributes: ImageAttributes(withSFSymbol: "photo.circle.fill")
+        )
+    }
+}
