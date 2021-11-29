@@ -100,42 +100,34 @@ public struct ImagePane: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             .scaledToFill()
             .aspectRatio(contentMode: .fit)
-            .modifier(ClipCircleOrRect(circle: (imageAttributes.originalImage == nil) ? false : true ))
+            .clipShape(Circle())
             .shadow(radius: (imageAttributes.originalImage == nil) ? 0 : 4)
-        
     }
-    
-    private struct ClipCircleOrRect: ViewModifier {
-        let circle: Bool
-        func body(content: Content) -> some View {
-            if circle {
-                content.clipShape(Circle())
-            } else {
-                content.clipShape(Rectangle())
-            }
-        }
-    }
-    
-    
 }
 
 struct ImagePane_Previews: PreviewProvider {
 
     static var previews: some View {
 
-        let placeholder = ImageAttributes(withSFSymbol: "person.crop.circle.fill")
+        let placeholder = ImageAttributes(withSFSymbol: "photo.circle")
+        let size = 150.0
+        ImagePane(image: placeholder, isEditMode: .constant(true))
+            .frame(width: size, height: size, alignment: .center)
+            .foregroundColor(.pink.opacity(0.25))
+            .padding()
+            .previewLayout(.sizeThatFits)
+            .background(.white)
 
         ImagePane(image: placeholder, isEditMode: .constant(false), renderingMode: .palette, colors: [.blue, .white])
-            .frame(width: 200, height: 200, alignment: .center)
+            .frame(width: size, height: size, alignment: .center)
             .padding()
             .previewLayout(.sizeThatFits)
             .background(.gray)
         
-        ImagePane(image: placeholder, isEditMode: .constant(true), renderingMode: .monochrome, linearGradient: LinearGradient(colors: [.white, .green], startPoint: .topLeading, endPoint: .bottomTrailing))
-            .frame(width: 200, height: 200, alignment: .center)
+        ImagePane(image: placeholder, isEditMode: .constant(true), renderingMode: .monochrome, linearGradient: LinearGradient(colors: [.yellow, .red], startPoint: .topLeading, endPoint: .bottomTrailing))
+            .frame(width: size, height: size, alignment: .center)
             .padding()
             .previewLayout(.sizeThatFits)
-            .background(.gray)
-        
+            .background(.black)
     }
 }
