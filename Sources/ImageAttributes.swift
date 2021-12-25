@@ -38,7 +38,7 @@ public class ImageAttributes: ObservableObject {
     }
 
     ///Used to create an ImageAssets object from properties which are for example stored in CoreData or @AppStorage.
-    init(image: Image, originalImage: UIImage?, croppedImage: UIImage?, scale: CGFloat, xWidth: CGFloat, yHeight: CGFloat) {
+    public init(image: Image, originalImage: UIImage?, croppedImage: UIImage?, scale: CGFloat, xWidth: CGFloat, yHeight: CGFloat) {
         self.image = image
         self.originalImage = originalImage
         self.croppedImage = croppedImage
