@@ -186,6 +186,7 @@ extension ImageMoveAndScaleSheet {
         
         imageAttributes.image = Image(uiImage: tempUIImage)
         imageAttributes.originalImage = inputImage
+        imageAttributes.croppedImage = tempUIImage
         imageAttributes.scale = zoomAmount
         imageAttributes.xWidth = currentPosition.width
         imageAttributes.yHeight = currentPosition.height

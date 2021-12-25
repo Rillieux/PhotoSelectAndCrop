@@ -18,6 +18,9 @@ public class ImageAttributes: ObservableObject {
     ///The original image selected before cropping or scaling
     @Published public var originalImage: UIImage?
     
+    ///The cropped image as a UIImage for easier persistence in applcations.
+    @Published public var croppedImage: UIImage?
+    
     ///The magnification of the cropped image
     @Published public var scale: CGFloat
     
@@ -34,15 +37,15 @@ public class ImageAttributes: ObservableObject {
         }
     }
 
-    ///USed to create an ImageAssets object from properties which are for example stored in CoreData or @AppStorage.
-    public init(image: Image, originalImage: UIImage?, scale: CGFloat, xWidth: CGFloat, yHeight: CGFloat) {
+    ///Used to create an ImageAssets object from properties which are for example stored in CoreData or @AppStorage.
+    init(image: Image, originalImage: UIImage?, croppedImage: UIImage?, scale: CGFloat, xWidth: CGFloat, yHeight: CGFloat) {
         self.image = image
         self.originalImage = originalImage
+        self.croppedImage = croppedImage
         self.scale = scale
         self.xWidth = xWidth
         self.yHeight = yHeight
     }
-    
     
     ///Allows ImageAttributes to be configured with an SF Symbol name string.
     ///For example: `ImageAttributes("person.crop.circle")`
