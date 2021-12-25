@@ -33,3 +33,4 @@ With an SF Symbol: `let placeholderAperture = ImageAttributes(withSFSymbol: "cam
 
 With an image from the Assets folder: `let placeholderAvatar = ImageAttributes(withImage: "avatar")`
 
+Examples of working apps using this Package can be found at: https://github.com/Rillieux/Contacts (using CoreData), and https://github.com/Rillieux/PhotoSelectAndCropDemo (a basic working implementation which does not cover persistence).
