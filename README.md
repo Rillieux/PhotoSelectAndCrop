@@ -19,7 +19,7 @@ The `CGFloat` and `CGPoint` represent the scale and position of the original ima
 
 Add an ImagePane view to your parent view like this:
 
-`ImagePane(ImagePane(image: image, isEditMode: $isEditMode, renderingMode: renderingMode, colors: colors)
+`ImagePane(image: image, isEditMode: $isEditMode, renderingMode: renderingMode, colors: colors)`
 
 <img align="right" src="Screenshots/coreDataEntity.png" width="60%">
 
