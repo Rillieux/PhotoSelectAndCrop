@@ -48,6 +48,45 @@ Layer 6: Public entry point (depends on Layer 2 + Layer 5)
 
 ---
 
+## Step 0 — Version Tagging Strategy
+
+**Why this must be decided first:** This modernization is a **semver MAJOR
+breaking change**. Any consumer of this package will have their code broken
+by these changes. The decision about how to version it must be settled before
+writing code, because it affects commit messages, branch strategy, and
+consumer communication.
+
+### What breaks for consumers
+
+| Breaking change | Consumer impact |
+|----------------|-----------------|
+| iOS minimum 15.0 → 17.0 | Any app targeting iOS 15 or 16 can no longer depend on this package |
+| `ImageAttributes: ObservableObject` → `@Observable` | Every consumer using `@StateObject var attrs = ImageAttributes(...)` or `@ObservedObject var attrs` must change to `@State` or plain `var` |
+| `ImagePane` initializers drop `ObservedObject(initialValue:)` | Consumers subclassing or wrapping `ImagePane` may need to adjust |
+| `SystemUIImagePicker` / `SystemPHPicker` commented out | Any consumer directly using these public types will get a compile error |
+
+### Action
+
+Swift Package Manager versions packages through **git tags**, not a field in
+`Package.swift`. After all modernization steps are complete and verified:
+
+1. Determine the current latest tag (e.g., `1.x.x`).
+2. Tag the final commit as the next **major** version (e.g., `2.0.0`).
+3. Consider adding a `CHANGELOG.md` or GitHub Release noting:
+   - Minimum iOS raised to 17.0.
+   - `ImageAttributes` now uses `@Observable` — update property wrappers.
+   - `SystemUIImagePicker` and `SystemPHPicker` are removed — use the
+     built-in `PhotosPicker` integration via `ImageMoveAndScaleSheet`.
+   - Cropped images are now Retina-resolution (may produce larger images
+     than before — consumers doing size comparisons should be aware).
+
+### When to tag
+
+Do **not** tag until Step 14 (final verification) passes. The tag should
+point to the commit that passes the full checklist.
+
+---
+
 ## Step 1 — Update `Package.swift`
 
 **File:** `Package.swift`
@@ -461,6 +500,18 @@ extension ImageMoveAndScaleSheet {
 
 ### 5d. `ImageMoveAndScaleSheet.swift` (property wrappers only)
 
+> **Lifecycle note:** With `@StateObject`, SwiftUI guaranteed the object was
+> created exactly once per view identity and survived parent body
+> re-evaluations. Apple's WWDC 2023 guidance ("Discover Observation in
+> SwiftUI") explicitly says to use `@State` with `@Observable` classes and
+> states that it provides the same ownership semantics. However, this is a
+> behavioral change worth **testing** during implementation — specifically,
+> verify that the `ViewModel` and `DeviceOrientation` instances are not
+> recreated on each re-presentation of the `.fullScreenCover`. If they are,
+> the user would lose their in-progress crop state when the parent view
+> re-renders. In practice this is unlikely because `.fullScreenCover`
+> creates an independent presentation context, but it should be confirmed.
+
 Comment out `@StateObject` declarations, replace with `@State`:
 
 ```swift
@@ -649,7 +700,21 @@ private var openSystemPickerButton: some View {
 }
 ```
 
-Add an `.onChange` modifier to handle the selected photo item:
+Add an `.onChange` modifier to handle the selected photo item.
+
+> **Format note:** `PhotosPickerItem` delivers image data in whatever format
+> the photo library stores (typically HEIC on modern devices, JPEG for older
+> photos, PNG for screenshots). `UIImage(data:)` handles all of these
+> natively, so `Data.self` as the `Transferable` type is the right choice.
+> We cannot use `loadTransferable(type: Image.self)` because that produces
+> a SwiftUI `Image`, and we need a `UIImage` for the crop math.
+
+> **Concurrency note:** The original plan used a completion-handler style
+> for `loadTransferable`. The corrected version below uses `async/await`
+> with a `Task` block, which is the idiomatic pattern for iOS 16+. The
+> `@MainActor` annotation ensures the `@State` mutations happen on the
+> main thread. We use `try?` so a failed load (e.g., user picks a video
+> that slipped through the filter) is silently ignored rather than crashing.
 
 ```swift
 // When the user selects a new photo via PhotosPicker, load it
@@ -657,18 +722,13 @@ Add an `.onChange` modifier to handle the selected photo item:
 // the old onDismiss → loadImage() callback chain.
 .onChange(of: selectedPhoto) { _, newItem in
     guard let newItem else { return }
-    newItem.loadTransferable(type: Data.self) { result in
-        switch result {
-        case .success(let data):
-            if let data, let uiImage = UIImage(data: data) {
-                // Update on main actor since we're modifying @State.
-                DispatchQueue.main.async {
-                    self.inputImage = uiImage
-                    self.loadImage()
-                }
-            }
-        case .failure(let error):
-            print("PhotosPicker error: \(error.localizedDescription)")
+    Task { @MainActor in
+        // Load the raw image data. UIImage(data:) handles HEIC, JPEG,
+        // PNG, and other standard formats.
+        if let data = try? await newItem.loadTransferable(type: Data.self),
+           let uiImage = UIImage(data: data) {
+            self.inputImage = uiImage
+            self.loadImage()
         }
     }
 }
@@ -704,22 +764,95 @@ to the actual container, not the physical screen.
 
 ### 7b. Wrap the body's ZStack in a `GeometryReader`
 
+> **API correction:** The original plan used `.onGeometryChange`, a modifier
+> whose exact availability and signature varies across iOS versions. The
+> corrected version below uses the standard `GeometryReader` + `.onAppear`
+> + `.onChange(of: geometry.size)` pattern, which is guaranteed to work on
+> iOS 17 and is the most widely tested approach in the SwiftUI ecosystem.
+
+> **Zero-size initial frame:** `containerSize` starts as `.zero`. On the
+> very first body evaluation — before `.onAppear` fires — any code that
+> reads `containerSize` would get zeros. This could cause division-by-zero
+> in `getAspect()`, a zero-size mask from `HoleShapeMask`, and nonsensical
+> values from `repositionImage()`. Two defenses are applied:
+>
+> 1. **Here (Step 7b):** The content is gated behind
+>    `if containerSize != .zero`, showing only a background color until the
+>    real size is known (typically one frame, invisible to the user).
+> 2. **In Step 8:** Each extension function (`getAspect`, `repositionImage`,
+>    `resetImageOriginAndScale`, `composeImageAttributes`) gets a
+>    `guard containerSize.width > 0, containerSize.height > 0` at the top.
+
 ```swift
 var body: some View {
     // GeometryReader provides the actual container dimensions,
     // replacing the deprecated UIScreen.main.bounds.
     GeometryReader { geometry in
-        // ... existing ZStack content moves inside here ...
+
+        // Gate on containerSize being populated to avoid division-by-zero
+        // and zero-size layouts on the very first frame.
+        if containerSize != .zero {
+            ZStack {
+                // ... existing ZStack content moves inside here ...
+            }
+        } else {
+            // Placeholder matching the sheet's background. Visible for
+            // at most one frame while .onAppear captures the geometry.
+            Color.black.opacity(0.8)
+        }
     }
-    // Capture the container size once and whenever it changes
-    // (e.g. device rotation, Split View resize).
-    .onGeometryChange(for: CGSize.self) { proxy in
-        proxy.size
-    } action: { newSize in
-        containerSize = newSize
+    // Capture the container size on first appearance.
+    .onAppear {
+        // Read from the GeometryReader by applying it as a background
+        // — see 7b-alt below.
     }
 }
 ```
+
+Because `GeometryReader`'s `geometry` proxy is only accessible inside
+its closure, and `.onAppear` is outside that closure, we need a way to
+propagate the size. The cleanest standard pattern uses a **preference key**:
+
+```swift
+// A PreferenceKey to propagate the container size from GeometryReader.
+private struct ContainerSizeKey: PreferenceKey {
+    static var defaultValue: CGSize = .zero
+    static func reduce(value: inout CGSize, nextValue: () -> CGSize) {
+        value = nextValue()
+    }
+}
+
+var body: some View {
+    ZStack {
+        // ... existing content ...
+    }
+    // Place a GeometryReader in the background so it does not affect
+    // the ZStack's layout. It reads the available size and publishes
+    // it via a preference key.
+    .background {
+        GeometryReader { geometry in
+            Color.clear
+                .preference(key: ContainerSizeKey.self,
+                            value: geometry.size)
+        }
+    }
+    // Receive the size whenever it changes (rotation, Split View resize).
+    .onPreferenceChange(ContainerSizeKey.self) { newSize in
+        if newSize != .zero {
+            containerSize = newSize
+        }
+    }
+}
+```
+
+This approach:
+- Keeps the GeometryReader out of the layout flow (it's in the background).
+- Fires `.onPreferenceChange` on the initial layout pass AND on every
+  subsequent size change (rotation, Split View drag, etc.).
+- Filters out the `.zero` value so `containerSize` is never set to it.
+
+The `if containerSize != .zero` guard in the content ensures no code runs
+with zero dimensions during the first frame before the preference fires.
 
 ### 7c. Comment out every `UIScreen.main.bounds` usage
 
@@ -795,8 +928,39 @@ Rectangle()
     .mask(HoleShapeMask(in: containerSize).fill(style: FillStyle(eoFill: true)))
 ```
 
+### Critical: `.onAppear` timing for `setCurrentImage()`
+
+The original code has `.onAppear(perform: setCurrentImage)` on the outer
+ZStack (line 192). After this refactor, `setCurrentImage()` reads
+`containerSize` (via `resetImageOriginAndScale` → `repositionImage`). If
+`.onAppear` fires before `.onPreferenceChange` populates `containerSize`,
+the zero-guard will bail out and the previously saved crop state won't load.
+
+**Fix:** Move `.onAppear(perform: setCurrentImage)` inside the
+`if containerSize != .zero` branch. This guarantees it only fires after the
+size is known. Additionally, add a `.onChange(of: containerSize)` handler
+as a fallback:
+
+```swift
+.onChange(of: containerSize) { oldSize, newSize in
+    // On the first real size (after the GeometryReader preference fires),
+    // load the previously saved image state. On subsequent size changes
+    // (rotation, Split View resize), reposition the image to fit.
+    if oldSize == .zero && newSize != .zero {
+        setCurrentImage()
+    } else {
+        repositionImage()
+    }
+}
+```
+
+This dual approach ensures `setCurrentImage()` is called exactly once, after
+`containerSize` is populated, regardless of the exact timing of
+`.onPreferenceChange` vs. `.onAppear`.
+
 ### Verification
 - All `UIScreen.main.bounds` references are commented out and replaced.
+- `.onAppear(perform: setCurrentImage)` is inside the zero-size gate.
 - Build succeeds. The view now sizes correctly in all window configurations.
 
 ---
@@ -820,9 +984,10 @@ debug prints, and (after Step 7) now uses `containerSize` instead of
 //     return screenAspectRatio
 // }
 
-// REPLACEMENT — uses containerSize captured by GeometryReader in the
-// parent view. This correctly reflects the available space, not the
-// physical screen.
+// REPLACEMENT — uses containerSize captured via the preference key
+// in the parent view. This correctly reflects the available space, not
+// the physical screen. The guard prevents division-by-zero if called
+// before the GeometryReader has reported a size.
 private func getAspect() -> CGFloat {
     guard containerSize.height > 0 else { return 1.0 }
     return containerSize.width / containerSize.height
@@ -831,12 +996,37 @@ private func getAspect() -> CGFloat {
 
 ### 8b. Update `resetImageOriginAndScale()`
 
-Replace all `UIScreen.main.bounds.width/height` with `containerSize.width/height`.
+Replace all `UIScreen.main.bounds.width/height` with
+`containerSize.width/height`.
+
+**Add a zero-guard at the top of the function:**
+
+```swift
+func resetImageOriginAndScale() {
+    // Guard: containerSize may be .zero on the first frame before the
+    // GeometryReader preference key fires. Bail out rather than
+    // computing nonsensical layout values from zero dimensions.
+    guard containerSize.width > 0, containerSize.height > 0 else { return }
+
+    // ... rest of function with containerSize replacing UIScreen ...
+}
+```
 
 ### 8c. Update `repositionImage()`
 
 Replace all `UIScreen.main.bounds.width/height` with
 `containerSize.width/height`.
+
+**Add a zero-guard at the top of the function:**
+
+```swift
+func repositionImage() {
+    // Guard: same zero-size protection as resetImageOriginAndScale().
+    guard containerSize.width > 0, containerSize.height > 0 else { return }
+
+    // ... rest of function with containerSize replacing UIScreen ...
+}
+```
 
 Comment out all `print()` debug statements:
 
@@ -854,6 +1044,19 @@ Comment out all `print()` debug statements:
 
 ### 8d. Fix `composeImageAttributes()` — remove force-unwraps, add bounds checking
 
+> **Behavioral note on clamping:** The clamping logic below *shifts* the
+> crop rectangle if it would otherwise extend beyond the image's pixel
+> bounds. This means: if `repositionImage()` ever fails to fully constrain
+> the user's drag/zoom (e.g., during the `UIScreen` → `containerSize`
+> migration, or due to floating-point rounding), the crop will silently
+> adjust rather than crash. The visual effect is that the saved crop may
+> be slightly different from what the user saw on screen. In practice,
+> `repositionImage()` already prevents this state, so the clamp is a
+> safety net, not a routine code path. If during testing the clamp fires
+> frequently (add a `print` during development to check), it means
+> `repositionImage()` needs tightening — not that the clamp should be
+> removed.
+
 ```swift
 func composeImageAttributes() {
 
@@ -867,6 +1070,7 @@ func composeImageAttributes() {
     // we bail out silently rather than crashing.
     guard let inputImage = inputImage else { return }
     guard displayW > 0 else { return }
+    guard containerSize.width > 0, containerSize.height > 0 else { return }
 
     let scale = inputImage.size.width / displayW
 
@@ -883,7 +1087,9 @@ func composeImageAttributes() {
 
     // Clamp the crop rect to the image bounds to prevent cropping
     // outside the image's pixel area (which would produce black/
-    // transparent pixels or a crash).
+    // transparent pixels or a crash). This is a safety net — under
+    // normal operation, repositionImage() should have already
+    // constrained the position so these clamps don't activate.
     let clampedX = max(0, min(xPos, inputImage.size.width - diameter))
     let clampedY = max(0, min(yPos, inputImage.size.height - diameter))
     let clampedDiameter = min(diameter,
@@ -1159,6 +1365,10 @@ replaces the picker button):
 | Package.swift targets iOS 17 | Visual inspection |
 | Package.swift tools version 5.9+ | Visual inspection |
 | All new code has explanatory comments | Visual inspection of each file |
+| `containerSize` zero-guard in every Extension function | Visual inspection of 8a, 8b, 8c, 8d |
+| `.onAppear(perform: setCurrentImage)` inside zero-gate | Verify it fires AFTER containerSize is populated |
+| Crop clamp doesn't fire in normal operation | Add temporary print in clamp, test, then remove |
+| New major version tag applied | `git tag` shows the new version after all checks pass |
 
 ### Run the build
 
@@ -1174,6 +1384,7 @@ warnings unrelated to our changes).
 ## Execution Order Summary
 
 ```
+Step  0: Version tagging strategy .......... decide semver major bump FIRST
 Step  1: Package.swift ..................... foundation for all subsequent steps
 Step  2: ImageManipulation.swift ........... standalone leaf, fixes crop quality
 Step  3: Color+Extensions.swift ............ standalone leaf, partial cleanup
@@ -1184,17 +1395,23 @@ Step  5: @Observable migration ............. coordinated across 5 files
          5c: ViewModel.swift
          5d: ImageMoveAndScaleSheet.swift (property wrappers only)
          5e: ImagePane.swift (property wrapper only)
+         ⚠ TEST: verify @State lifecycle matches old @StateObject behavior
 Step  6: PhotosPicker replacement .......... coordinated across 3 files
          6a: SystemImagePicker.swift (comment out)
          6b: SystemPHPicker.swift (comment out)
-         6c: ImageMoveAndScaleSheet.swift (add PhotosPicker)
+         6c: ImageMoveAndScaleSheet.swift (add PhotosPicker, async/await)
+         ⚠ TEST: verify HEIC, JPEG, PNG all load correctly
 Step  7: GeometryReader migration .......... coordinated across 2 files
-         7a–c: ImageMoveAndScaleSheet.swift
+         7a: Add @State containerSize + ContainerSizeKey PreferenceKey
+         7b: Background GeometryReader + .onPreferenceChange
+         7c: Replace all UIScreen.main.bounds call sites
+         ⚠ TEST: verify on iPad Split View + rotation
 Step  8: Extensions fixes .................. ImageMoveAndScaleSheet+Extensions.swift
-         8a: getAspect()
-         8b: resetImageOriginAndScale()
-         8c: repositionImage()
-         8d: composeImageAttributes()
+         8a: getAspect() — containerSize + zero-guard
+         8b: resetImageOriginAndScale() — containerSize + zero-guard
+         8c: repositionImage() — containerSize + zero-guard + remove prints
+         8d: composeImageAttributes() — guard-let + containerSize + clamp
+         ⚠ TEST: verify crop output matches viewfinder exactly
 Step  9: Remaining deprecations ............ ImageMoveAndScaleSheet.swift
          9a: presentationMode → dismiss
          9b: edgesIgnoringSafeArea → ignoresSafeArea
@@ -1204,8 +1421,76 @@ Step 11: Preview modernization ............. 2 files
 Step 12: ViewModifiers docs ................ ViewModifiers.swift
 Step 13: Color+Extensions finish ........... Color+Extensions.swift
 Step 14: Final verification ................ all files, build, grep checks
+         Tag as new major version (Step 0 decision)
 ```
 
 Each step is designed so that `swift build` succeeds after it completes.
 Steps within a coordinated group (5a–5e, 6a–6c, 7a–7c) must all be applied
 together before building.
+
+---
+
+## Confidence Assessment
+
+### Overall: ~90%
+
+The corrections in this revision address the five specific weaknesses
+identified in the initial review. Here is the per-step breakdown:
+
+| Step | Confidence | Risk | Mitigation |
+|------|-----------|------|------------|
+| 0 (Versioning) | 99% | None — this is a process decision, not code. | — |
+| 1 (Package.swift) | 99% | Existing code might use APIs removed in newer Swift. | Build test immediately after. |
+| 2 (ImageManipulation) | 98% | `UIGraphicsImageRenderer` is well-understood; only risk is the `format.scale` setting producing unexpectedly large images on 3x devices. | Test output image dimensions before/after. |
+| 3 (Color+Extensions) | 95% | Risk of missing a call site that references a commented-out color. | The plan defers `systemRed` to Step 13 specifically to avoid this. Grep verification in Step 14. |
+| 4 (Image+Extensions) | 99% | Dead code removal. Zero risk. | — |
+| 5 (@Observable) | 85% | **Highest risk step.** The `@State` + `@Observable` class lifecycle is Apple's recommended pattern but is newer and less battle-tested than `@StateObject`. If the `.fullScreenCover` re-creates the `ViewModel` on each presentation, crop state would be lost. | Test explicitly: present sheet, pick photo, crop, dismiss, re-present — verify state persists. |
+| 6 (PhotosPicker) | 88% | `loadTransferable(type: Data.self)` should handle all formats, but edge cases (Live Photos, ProRAW, very large panoramas) may behave differently. The `async/await` `@MainActor` pattern is standard. | Test with a variety of photo formats from a real device photo library. |
+| 7 (GeometryReader) | 85% | **Second highest risk.** The preference key pattern is well-established, but the timing of when `containerSize` is first populated vs. when `setCurrentImage()` / `repositionImage()` are called is subtle. If `.onAppear(perform: setCurrentImage)` fires before `.onPreferenceChange` populates `containerSize`, the function will bail out due to the zero-guard and the previously-saved crop state won't load. | The fix: ensure `.onAppear(perform: setCurrentImage)` is inside the `if containerSize != .zero` gate, so it only fires after the size is known. If that's insufficient, use `.onChange(of: containerSize)` to trigger `setCurrentImage()` on the first non-zero size. |
+| 8 (Extensions) | 92% | The zero-guards and clamps are defensive. The main risk is the clamp subtly shifting the crop — addressed by the behavioral note. The `containerSize` replacement is mechanical (find-and-replace) once Step 7 is working. | During testing, temporarily add a print inside each clamp to verify it doesn't fire under normal operation. |
+| 9 (Deprecations) | 98% | `dismiss` and `ignoresSafeArea` are direct drop-in replacements. | — |
+| 10–13 (Cleanup) | 98% | Cosmetic changes. Low risk. | — |
+| 14 (Verification) | 99% | The grep checklist is exhaustive. | — |
+
+### What moved the needle from ~75% to ~90%
+
+1. **Versioning** (Step 0): Consumers won't be surprised by breaking changes.
+2. **Zero-guards everywhere**: `containerSize == .zero` can no longer cause
+   division-by-zero or nonsensical layout values.
+3. **Preference key pattern**: Replaces the uncertain `.onGeometryChange` API
+   with the most widely tested size-propagation pattern in SwiftUI.
+4. **async/await + @MainActor**: Eliminates the threading ambiguity of the
+   old completion-handler approach.
+5. **Clamping documented as safety net**: Makes it clear this is defensive
+   code, not a behavior change, and describes how to detect if it fires.
+
+### What keeps it below 95%
+
+- **Step 5 (@Observable lifecycle):** I am relying on Apple's WWDC 2023
+  guidance that `@State` with `@Observable` classes preserves identity.
+  This is documented but newer than `@StateObject` and less community-tested.
+  The only way to reach 95%+ confidence is to build and run the actual code.
+- **Step 7 (GeometryReader timing):** The interaction between
+  `.onPreferenceChange` timing, `.onAppear` timing, and the `if containerSize
+  != .zero` gate is correct in theory but needs runtime verification. The
+  preference key fires during the layout pass, which happens before
+  `.onAppear` — so `containerSize` should be populated by the time
+  `.onAppear` calls `setCurrentImage()`. But "should" is not "proven."
+- **Step 6 (PhotosPicker formats):** I have not tested
+  `loadTransferable(type: Data.self)` against every photo format Apple
+  supports. Standard formats (JPEG, HEIC, PNG) are well-known to work.
+  Edge cases (ProRAW, Live Photos as stills) are plausible but untested.
+
+### Recommended testing protocol after implementation
+
+1. **iPhone portrait:** Pick photo → crop → save → re-open → verify crop matches.
+2. **iPhone landscape:** Same flow.
+3. **iPad Split View:** Same flow — this is the main validation for the
+   GeometryReader migration.
+4. **Rotation mid-crop:** Pick photo, start adjusting, rotate device, verify
+   image stays within the circle mask.
+5. **Re-presentation:** Dismiss and re-present the `.fullScreenCover` to
+   verify `@State` preserves the `ViewModel`.
+6. **Photo formats:** Test with HEIC, JPEG, PNG, and a screenshot.
+7. **Retina verification:** After cropping, inspect `croppedImage.scale` —
+   it should match the original image's scale, not be 1.0.
