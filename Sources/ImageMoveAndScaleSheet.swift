@@ -15,7 +15,9 @@ struct ImageMoveAndScaleSheet: View {
 
     @StateObject var orientation = DeviceOrientation()
 
-    @State private var viewModel = ViewModel()
+    ///Internal rather than private because the gesture/crop helpers in
+    ///ImageMoveAndScaleSheet+Extensions.swift live in a separate file.
+    @State var viewModel = ViewModel()
 
     var imageAttributes: ImageAttributes
 
