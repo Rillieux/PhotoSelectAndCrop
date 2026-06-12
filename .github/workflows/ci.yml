@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: xcodebuild -version && swift --version
+
+      # swift build compiles for the macOS host and would fail at `import UIKit`,
+      # so build with xcodebuild against the iOS Simulator SDK instead.
+      # xcodebuild auto-generates a scheme from Package.swift; the generic
+      # destination compiles without needing a booted simulator.
+      - name: Build for iOS Simulator
+        run: |
+          xcodebuild build \
+            -scheme PhotoSelectAndCrop \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO
