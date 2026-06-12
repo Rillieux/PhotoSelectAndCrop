@@ -8,14 +8,14 @@
 import SwiftUI
 
 
-///The functions in this file reltae to positioning the original image in the "viewfinder"
+///The functions in this file relate to positioning the original image in the "viewfinder"
 ///(the HoleShapeMask).
 
 extension ImageMoveAndScaleSheet {
-    
-    /// Loads an image selected by the user from an ImagePicker with access to the user's photo library.
+
+    /// Loads an image selected by the user from the photo picker.
     ///
-    /// First, we want to measure the image top imput and determine its aspect ratio.
+    /// First, we want to measure the input image and determine its aspect ratio.
     func loadImage() {
         guard let inputImage = inputImage else { return }
         let w = inputImage.size.width
@@ -56,7 +56,6 @@ extension ImageMoveAndScaleSheet {
     
     ///Positions the image selected to fit the screen.
     func resetImageOriginAndScale() {
-        print("reposition")
         let screenAspect: CGFloat = getAspect()
 
         withAnimation(.easeInOut){
@@ -119,48 +118,40 @@ extension ImageMoveAndScaleSheet {
         ///The following if statements keep the image filling the circle cutout in at least one dimension.
         if displayH >= diameter {
             if newPosition.height > verticalOffset {
-                print("1. newPosition.height > verticalOffset")
-                    newPosition = CGSize(width: newPosition.width, height: verticalOffset - adjust + inset)
-                    currentPosition = CGSize(width: newPosition.width, height: verticalOffset - adjust + inset)
+                newPosition = CGSize(width: newPosition.width, height: verticalOffset - adjust + inset)
+                currentPosition = CGSize(width: newPosition.width, height: verticalOffset - adjust + inset)
             }
-            
+
             if newPosition.height < ( verticalOffset * -1) {
-                print("2. newPosition.height < ( verticalOffset * -1)")
-                    newPosition = CGSize(width: newPosition.width, height: ( verticalOffset * -1) - adjust - inset)
-                    currentPosition = CGSize(width: newPosition.width, height: ( verticalOffset * -1) - adjust - inset)
+                newPosition = CGSize(width: newPosition.width, height: ( verticalOffset * -1) - adjust - inset)
+                currentPosition = CGSize(width: newPosition.width, height: ( verticalOffset * -1) - adjust - inset)
             }
-            
+
         } else {
-            print("else: H")
-                newPosition = CGSize(width: newPosition.width, height: 0)
-                currentPosition = CGSize(width: newPosition.width, height: 0)
+            newPosition = CGSize(width: newPosition.width, height: 0)
+            currentPosition = CGSize(width: newPosition.width, height: 0)
         }
-        
+
         if displayW >= diameter {
             if newPosition.width > horizontalOffset {
-                print("3. newPosition.width > horizontalOffset")
-                    newPosition = CGSize(width: horizontalOffset + inset, height: newPosition.height)
-                    currentPosition = CGSize(width: horizontalOffset + inset, height: currentPosition.height)
+                newPosition = CGSize(width: horizontalOffset + inset, height: newPosition.height)
+                currentPosition = CGSize(width: horizontalOffset + inset, height: currentPosition.height)
             }
-            
-            if newPosition.width < ( horizontalOffset * -1) {
-                print("4. newPosition.width < ( horizontalOffset * -1)")
-                    newPosition = CGSize(width: ( horizontalOffset * -1) - inset, height: newPosition.height)
-                    currentPosition = CGSize(width: ( horizontalOffset * -1) - inset, height: currentPosition.height)
 
+            if newPosition.width < ( horizontalOffset * -1) {
+                newPosition = CGSize(width: ( horizontalOffset * -1) - inset, height: newPosition.height)
+                currentPosition = CGSize(width: ( horizontalOffset * -1) - inset, height: currentPosition.height)
             }
-            
+
         } else {
-            print("else: W")
-                newPosition = CGSize(width: 0, height: newPosition.height)
-                currentPosition = CGSize(width: 0, height: newPosition.height)
+            newPosition = CGSize(width: 0, height: newPosition.height)
+            currentPosition = CGSize(width: 0, height: newPosition.height)
         }
 
         ///This statement is needed in case of a screenshot.
         ///That is, in case the user chooses a photo that is the exact size of the device screen.
         ///Without this function, such an image can be shrunk to less than the
-        ///size of the cutrout circle and even go negative (inversed).
-        ///If "processImage()" is run in this state, there is a fatal error. of a nil UIImage.
+        ///size of the cutout circle and even go negative (inversed).
         ///
         if displayW < diameter - inset && displayH < diameter - inset {
             resetImageOriginAndScale()
@@ -174,15 +165,16 @@ extension ImageMoveAndScaleSheet {
     ///scale and size will be slightly off.
     ///
     func composeImageAttributes() {
-        
-        let scale = (inputImage?.size.width)! / displayW
+        guard let inputImage, displayW > 0 else { return }
+
+        let scale = inputImage.size.width / displayW
         let originAdjustment = min(UIScreen.main.bounds.width, UIScreen.main.bounds.height)
         let diameter = ( originAdjustment - inset * 2 ) * scale
-        
+
         let xPos = ( ( ( displayW - originAdjustment ) / 2 ) + inset + ( currentPosition.width * -1 ) ) * scale
         let yPos = ( ( ( displayH - originAdjustment ) / 2 ) + inset + ( currentPosition.height * -1 ) ) * scale
-        
-        let tempUIImage: UIImage = croppedImage(from: inputImage!, croppedTo: CGRect(x: xPos, y: yPos, width: diameter, height: diameter))
+
+        let tempUIImage: UIImage = croppedImage(from: inputImage, croppedTo: CGRect(x: xPos, y: yPos, width: diameter, height: diameter))
         
         imageAttributes.image = Image(uiImage: tempUIImage)
         imageAttributes.originalImage = inputImage

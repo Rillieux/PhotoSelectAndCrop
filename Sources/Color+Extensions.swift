@@ -1,127 +1,158 @@
 //
-//  File.swift
-//  
+//  Color+Extensions.swift
+//  PhotoSelectAndCrop
 //
 //  Created by Dave Kondris on 30/05/21.
 //
-///
+
 import SwiftUI
 
+///These shims predate `Color(uiColor:)` and are kept only for source
+///compatibility. They are deprecated and will be removed in a future release.
 public extension Color {
 
+    @available(*, deprecated, message: "Use Color(uiColor: .label) instead; this shim will be removed in a future release.")
     static var label: Color {
-        return Color(UIColor.label)
+        return Color(uiColor: .label)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .secondaryLabel) instead; this shim will be removed in a future release.")
     static var secondaryLabel: Color {
-        return Color(UIColor.secondaryLabel)
+        return Color(uiColor: .secondaryLabel)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .tertiaryLabel) instead; this shim will be removed in a future release.")
     static var tertiaryLabel: Color {
-        return Color(UIColor.tertiaryLabel)
+        return Color(uiColor: .tertiaryLabel)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .quaternaryLabel) instead; this shim will be removed in a future release.")
     static var quaternaryLabel: Color {
-        return Color(UIColor.quaternaryLabel)
+        return Color(uiColor: .quaternaryLabel)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemFill) instead; this shim will be removed in a future release.")
     static var systemFill: Color {
-        return Color(UIColor.systemFill)
+        return Color(uiColor: .systemFill)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .secondarySystemFill) instead; this shim will be removed in a future release.")
     static var secondarySystemFill: Color {
-        return Color(UIColor.secondarySystemFill)
+        return Color(uiColor: .secondarySystemFill)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .tertiarySystemFill) instead; this shim will be removed in a future release.")
     static var tertiarySystemFill: Color {
-        return Color(UIColor.tertiarySystemFill)
+        return Color(uiColor: .tertiarySystemFill)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .quaternarySystemFill) instead; this shim will be removed in a future release.")
     static var quaternarySystemFill: Color {
-        return Color(UIColor.quaternarySystemFill)
+        return Color(uiColor: .quaternarySystemFill)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemBackground) instead; this shim will be removed in a future release.")
     static var systemBackground: Color {
-           return Color(UIColor.systemBackground)
+        return Color(uiColor: .systemBackground)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .secondarySystemBackground) instead; this shim will be removed in a future release.")
     static var secondarySystemBackground: Color {
-        return Color(UIColor.secondarySystemBackground)
+        return Color(uiColor: .secondarySystemBackground)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .tertiarySystemBackground) instead; this shim will be removed in a future release.")
     static var tertiarySystemBackground: Color {
-        return Color(UIColor.tertiarySystemBackground)
+        return Color(uiColor: .tertiarySystemBackground)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemGroupedBackground) instead; this shim will be removed in a future release.")
     static var systemGroupedBackground: Color {
-        return Color(UIColor.systemGroupedBackground)
+        return Color(uiColor: .systemGroupedBackground)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .secondarySystemGroupedBackground) instead; this shim will be removed in a future release.")
     static var secondarySystemGroupedBackground: Color {
-        return Color(UIColor.secondarySystemGroupedBackground)
+        return Color(uiColor: .secondarySystemGroupedBackground)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .tertiarySystemGroupedBackground) instead; this shim will be removed in a future release.")
     static var tertiarySystemGroupedBackground: Color {
-        return Color(UIColor.tertiarySystemGroupedBackground)
+        return Color(uiColor: .tertiarySystemGroupedBackground)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemRed) instead; this shim will be removed in a future release.")
     static var systemRed: Color {
-        return Color(UIColor.systemRed)
+        return Color(uiColor: .systemRed)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemBlue) instead; this shim will be removed in a future release.")
     static var systemBlue: Color {
-        return Color(UIColor.systemBlue)
+        return Color(uiColor: .systemBlue)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemPink) instead; this shim will be removed in a future release.")
     static var systemPink: Color {
-        return Color(UIColor.systemPink)
+        return Color(uiColor: .systemPink)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemTeal) instead; this shim will be removed in a future release.")
     static var systemTeal: Color {
-        return Color(UIColor.systemTeal)
+        return Color(uiColor: .systemTeal)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemGreen) instead; this shim will be removed in a future release.")
     static var systemGreen: Color {
-        return Color(UIColor.systemGreen)
+        return Color(uiColor: .systemGreen)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemIndigo) instead; this shim will be removed in a future release.")
     static var systemIndigo: Color {
-        return Color(UIColor.systemIndigo)
+        return Color(uiColor: .systemIndigo)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemOrange) instead; this shim will be removed in a future release.")
     static var systemOrange: Color {
-        return Color(UIColor.systemOrange)
+        return Color(uiColor: .systemOrange)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemPurple) instead; this shim will be removed in a future release.")
     static var systemPurple: Color {
-        return Color(UIColor.systemPurple)
+        return Color(uiColor: .systemPurple)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemYellow) instead; this shim will be removed in a future release.")
     static var systemYellow: Color {
-        return Color(UIColor.systemYellow)
+        return Color(uiColor: .systemYellow)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemGray) instead; this shim will be removed in a future release.")
     static var systemGray: Color {
-        return Color(UIColor.systemGray)
+        return Color(uiColor: .systemGray)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemGray2) instead; this shim will be removed in a future release.")
     static var systemGray2: Color {
-        return Color(UIColor.systemGray2)
+        return Color(uiColor: .systemGray2)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemGray3) instead; this shim will be removed in a future release.")
     static var systemGray3: Color {
-        return Color(UIColor.systemGray3)
+        return Color(uiColor: .systemGray3)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemGray4) instead; this shim will be removed in a future release.")
     static var systemGray4: Color {
-        return Color(UIColor.systemGray4)
+        return Color(uiColor: .systemGray4)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemGray5) instead; this shim will be removed in a future release.")
     static var systemGray5: Color {
-        return Color(UIColor.systemGray5)
+        return Color(uiColor: .systemGray5)
     }
 
+    @available(*, deprecated, message: "Use Color(uiColor: .systemGray6) instead; this shim will be removed in a future release.")
     static var systemGray6: Color {
-        return Color(UIColor.systemGray6)
+        return Color(uiColor: .systemGray6)
     }
 }
