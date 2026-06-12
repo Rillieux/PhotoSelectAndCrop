@@ -1,16 +1,14 @@
-/* 
+/*
   Localizable.strings
   PhotoSelectAndCrop
 
   Created by Dave Kondris on 29/05/21.
-  
+
 */
 
 "Select a photo by tapping the icon below" = "Appuyez sur l'icône ci-dessous pour sélectionner une photo";
 "Change photo" = "Modifier";
 "Add photo" = "Ajouter une photo";
-"Cancel" = "Anuller";
+"Cancel" = "Annuler";
 "Move and Scale" = "Recadrer";
 "Use photo" = "Choisir";
-"Edit" = "Modifier";
-"Save" = "OK";

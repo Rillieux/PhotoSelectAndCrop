@@ -6,35 +6,35 @@
 //
 
 import SwiftUI
+import Observation
 
 ///A collection of attributes used to position an image in the ImageMoveAndScaleSheet at a determined scale and offset as well as a cropped image representing the same.
-///Setting self.scale to 15 will keep an image from the Asset catalog from being too small. See line 159 in ImageMoveAndScaleSheet.swift.
+///Setting self.scale to 15 will keep an image from the Asset catalog from being too small.
 
-public class ImageAttributes: ObservableObject {
-    
-    ///Cropped and / or scaled image take from originalImage
-    @Published public var image: Image
-    
+@Observable @MainActor
+public final class ImageAttributes {
+
+    ///Cropped and / or scaled image taken from originalImage
+    public var image: Image
+
     ///The original image selected before cropping or scaling
-    @Published public var originalImage: UIImage?
-    
-    ///The cropped image as a UIImage for easier persistence in applcations.
-    @Published public var croppedImage: UIImage?
-    
+    public var originalImage: UIImage?
+
+    ///The cropped image as a UIImage for easier persistence in applications.
+    public var croppedImage: UIImage?
+
     ///The magnification of the cropped image
-    @Published public var scale: CGFloat
-    
+    public var scale: CGFloat
+
     ///Used to determine the horizontal position or x-offset of the original image in the "viewfinder"
-    @Published public var xWidth: CGFloat
-    
+    public var xWidth: CGFloat
+
     ///Used to determine the vertical position or y-offset of the original image in the "viewfinder"
-    @Published public var yHeight: CGFloat
-    
+    public var yHeight: CGFloat
+
     ///A CGSize computed from xWidth and yHeight.
     public var position: CGSize {
-        get {
-            return CGSize(width: xWidth, height: yHeight)
-        }
+        CGSize(width: xWidth, height: yHeight)
     }
 
     ///Used to create an ImageAssets object from properties which are for example stored in CoreData or @AppStorage.
@@ -46,7 +46,7 @@ public class ImageAttributes: ObservableObject {
         self.xWidth = xWidth
         self.yHeight = yHeight
     }
-    
+
     ///Allows ImageAttributes to be configured with an SF Symbol name string.
     ///For example: `ImageAttributes("person.crop.circle")`
     public init(withSFSymbol name: String) {
@@ -55,14 +55,12 @@ public class ImageAttributes: ObservableObject {
         self.xWidth = 1.0
         self.yHeight = 1.0
     }
-    
+
     ///Allows ImageAttributes to be configured with an image from the Asset Catalogue.
     public init(withImage name: String) {
         self.image = Image(name)
         self.scale = 15.0
         self.xWidth = 1.0
         self.yHeight = 1.0
-        
     }
 }
-
