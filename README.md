@@ -40,9 +40,9 @@ With an image from the Assets folder: `let placeholderAvatar = ImageAttributes(w
 
 Examples of working apps using this Package can be found at: https://github.com/Rillieux/Contacts (using CoreData), and https://github.com/Rillieux/PhotoSelectAndCropDemo (a basic working implementation which does not cover persistence).
 
-## Migrating from 1.x to 2.0
+## Migrating from 2.x to 3.0
 
-Version 2.0 raises the minimum platform to iOS 17, replaces the UIKit pickers with the system SwiftUI `PhotosPicker`, and adopts the Observation framework. The following changes may affect your code:
+Version 3.0 raises the minimum platform to iOS 17, replaces the UIKit pickers with the system SwiftUI `PhotosPicker`, and adopts the Observation framework. (The 1.x and 2.x APIs are the same in the areas affected, so these notes apply equally when coming from 1.x.) The following changes may affect your code:
 
 1. **`SystemUIImagePicker` and `SystemPHPicker` are removed.** The package now presents the system `PhotosPicker` internally; there is nothing to configure. If your app imported these wrapper types directly, adopt `PhotosPicker` from PhotosUI yourself.
 
